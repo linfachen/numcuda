@@ -1,30 +1,4 @@
-#include <Python.h>
-
-
-
-enum class Dtype
-{
-	uint1,
-	int8,
-	int16,
-	int32,
-	int64,
-	unit8,
-	uint16,
-	uint32,
-	uint64,
-	float16,
-	float32,
-	float64,
-};
-
-
-typedef struct {
-	PyObject_HEAD
-	size_t buff_size;
-	Dtype data_type; 
-	char * data;     
-}cudaArray;
+#include "cudaArray.h"
 
 
 static PyTypeObject PycudaArray_Type = {
@@ -73,10 +47,10 @@ static PyTypeObject PycudaArray_Type = {
 
 
 
-static struct PyModuleDef samplemodule = {
+static struct PyModuleDef numcuda_emodule = {
 	PyModuleDef_HEAD_INIT,
-	"mydict", /* name of module */
-	"c++ map module", /* Doc string (may be NULL) */
+	"numcuda", /* name of module */
+	"a module like numpy use cuda to accelerat computation", /* Doc string (may be NULL) */
 	-1, /* Size of per-interpreter state or -1 */
 	 0 /* Method table */
 };
@@ -94,10 +68,10 @@ PyInit_numcuda(void) {
 		return NULL;
 
 
-	m = PyModule_Create(&samplemodule);
+	m = PyModule_Create(&numcuda_emodule);
 
-	Py_INCREF(&PyMydict_Type);
-	PyModule_AddObject(m, "mydict", (PyObject *)&PyMydict_Type);
+	Py_INCREF(&PycudaArray_Type);
+	PyModule_AddObject(m, "numcuda", (PyObject *)&PycudaArray_Type);
 
 	return m;
 }
