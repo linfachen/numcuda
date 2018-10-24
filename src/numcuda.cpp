@@ -1,10 +1,16 @@
 #include "cudaArray.h"
 
 
-static PyTypeObject PycudaArray_Type = {
+PyObject * get_strides_from_shape(PyObject *)
+{
+
+    return NULL;
+}
+
+static PyTypeObject PyCudaArray_Type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"cudaArray",                 /* tp_name */
-	sizeof(cudaArray),         /* tp_basicsize */
+	sizeof(PyCudaArray),         /* tp_basicsize */
 	0,                         /* tp_itemsize */
 	0,                         /* tp_dealloc */
 	0,                         /* tp_print */
@@ -43,7 +49,28 @@ static PyTypeObject PycudaArray_Type = {
 	0,             			 /* tp_free */
 };
 
+//
+static PyObject *
+new_cudaArray(PyObject *self, PyObject *args)
+{
 
+
+
+}
+
+
+
+
+
+
+
+
+
+/* Method table */
+static PyMethodDef Numcuda_Methods[] = {
+		{ "array", new_cudaArray, METH_VARARGS, "create a cudaArray!" },
+		{ NULL, NULL, 0, NULL }
+};
 
 
 
@@ -52,7 +79,7 @@ static struct PyModuleDef numcuda_emodule = {
 	"numcuda", /* name of module */
 	"a module like numpy use cuda to accelerat computation", /* Doc string (may be NULL) */
 	-1, /* Size of per-interpreter state or -1 */
-	 0 /* Method table */
+	Numcuda_Methods /* Method table */
 };
 
 
@@ -64,14 +91,14 @@ PyInit_numcuda(void) {
 	//if (PyType_Ready(&PyMydict_Type) < 0)
 	//	return NULL;
 
-	if (PyType_Ready(&PycudaArray_Type) < 0)
+	if (PyType_Ready(&PyCudaArray_Type) < 0)
 		return NULL;
 
 
 	m = PyModule_Create(&numcuda_emodule);
 
-	Py_INCREF(&PycudaArray_Type);
-	PyModule_AddObject(m, "numcuda", (PyObject *)&PycudaArray_Type);
+	Py_INCREF(&PyCudaArray_Type);
+	PyModule_AddObject(m, "numcuda", (PyObject *)&PyCudaArray_Type);
 
 	return m;
 }

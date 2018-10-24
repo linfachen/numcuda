@@ -5,7 +5,7 @@
 
 
 #ifndef NUMCUDA_CUDAARRAY_H
-
+#define NUMCUDA_CUDAARRAY_H
 
 enum class Dtype
 {
@@ -29,12 +29,15 @@ typedef struct {
     size_t buff_size;
     Dtype data_type;
     PyObject * shape; //it always a tupleobject or listobject
+    PyObject * strides; //it always a tupleobject or listobject
     char * data;
-}cudaArray;
+}PyCudaArray;
+
+
+PyObject * get_strides_from_shape(PyObject *);
 
 
 
 
-#define NUMCUDA_CUDAARRAY_H
 
 #endif //NUMCUDA_CUDAARRAY_H
