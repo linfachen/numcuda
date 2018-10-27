@@ -9,12 +9,12 @@
 
 enum class Dtype
 {
-    uint1,
+    //uint1,
     int8,
     int16,
     int32,
     int64,
-    unit8,
+    uint8,
     uint16,
     uint32,
     uint64,
@@ -33,7 +33,7 @@ typedef struct {
     char * data;
 }PyCudaArray;
 
-
+size_t elem_size(Dtype type);
 PyObject * get_strides_from_shape(PyObject *);
 
 
