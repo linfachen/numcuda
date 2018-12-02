@@ -1,11 +1,11 @@
-#include <cudaArray.h>
+#include "cudaArray.h"
 #include "cuda_runtime.h"
 #include "cudaArray.h"
 
 
 size_t elem_size(Dtype type)
 {
-	size_t res;
+	size_t res = 0;
 	switch(type){
 		case Dtype::int8:
 		case Dtype::uint8:
@@ -46,7 +46,7 @@ size_t get_data_size(PyObject * shape,Dtype type)
 //get_strides_from_shape
 PyObject * get_strides_from_shape(PyObject * shape,Dtype type)
 {
-	PyObject * res;
+	PyObject * res = NULL;
 	size_t type_size = elem_size(type);
 	if(PyTuple_CheckExact(shape)){
 		int num = PyTuple_GET_SIZE(shape);
@@ -127,7 +127,11 @@ new_cudaArray(PyObject *shape, char *buff,Dtype dtype)
 }
 
 
-
+static PyObject *
+asnumpy(PyObject *self,PyObject *cuda_array)
+{
+    return NULL;
+}
 
 
 
@@ -136,8 +140,9 @@ new_cudaArray(PyObject *shape, char *buff,Dtype dtype)
 
 /* Method table */
 static PyMethodDef Numcuda_Methods[] = {
-		//{ "array", new_cudaArray, METH_VARARGS, "create a cudaArray!" },
-		{ NULL, NULL, 0, NULL }
+        //{"array", new_cudaArray, METH_VARARGS, "create a cudaArray!" },
+        {"asnumpy",asnumpy,METH_VARARGS,"convert cudaArray to numpy array"},
+        { NULL, NULL, 0, NULL }
 };
 
 
@@ -153,7 +158,7 @@ static struct PyModuleDef numcuda_emodule = {
 
 
 PyMODINIT_FUNC
-PyInit_numcuda(void) {
+PyInit_lib_numcuda(void) {
 	PyObject *m;
 
 	//if (PyType_Ready(&PyMydict_Type) < 0)

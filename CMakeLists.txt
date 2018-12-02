@@ -17,6 +17,9 @@ set(CMAKE_CXX_FLAGS "-O2 -Wall -fPIC -std=c++14 ${CMAKE_CXX_FLAGS}")
 
 
 file(GLOB DIR_SRCS src/*.cpp)
+file(GLOB CU_SRCS src/kernel/*.cu)
 
+cuda_add_library(kernel STATIC  ${CU_SRCS})
 # message(${CUDA_INCLUDE_DIRS})
-add_library(numcuda SHARED ${DIR_SRCS})
+add_library(_numcuda SHARED ${DIR_SRCS})
+target_link_libraries(_numcuda kernel)

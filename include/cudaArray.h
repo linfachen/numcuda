@@ -2,26 +2,11 @@
 // Created by spinors on 18-10-21.
 //
 #include <Python.h>
-
+#include "util.h"
 
 #ifndef NUMCUDA_CUDAARRAY_H
 #define NUMCUDA_CUDAARRAY_H
 
-enum class Dtype
-{
-    //uint1,
-    int8,
-    int16,
-    int32,
-    int64,
-    uint8,
-    uint16,
-    uint32,
-    uint64,
-    float16,
-    float32,
-    float64,
-};
 
 
 typedef struct {
