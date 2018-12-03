@@ -1,5 +1,6 @@
 import os
 import sys
+import numpy as np
 
 def _find_lib(lib_name="lib_numcuda.so"):
     path = os.path.dirname(os.path.abspath(__file__))
@@ -23,4 +24,10 @@ if _find_lib():
     from lib_numcuda import *
 else:
     raise ImportError("can not import lib_numcuda!!!")
+
+
+def array(obj):
+    if isinstance(obj,list):
+        obj = np.array(obj)
+    return _array(obj)
 

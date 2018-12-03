@@ -12,6 +12,7 @@ find_package(CUDA)
 include_directories("include")
 include_directories(${PYTHON_INCLUDE_DIRS})
 include_directories(${CUDA_INCLUDE_DIRS})
+include_directories("/usr/local/lib/python3.6/dist-packages/numpy/core/include")
 
 set(CMAKE_CXX_FLAGS "-O2 -Wall -fPIC -std=c++14 ${CMAKE_CXX_FLAGS}")
 

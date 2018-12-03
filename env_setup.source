@@ -1,0 +1,4 @@
+shellpath=$(dirname $(readlink -f "$0"))
+echo ${shellpath}
+export PYTHONPATH=${shellpath}/python:${PYTHONPATH}
+

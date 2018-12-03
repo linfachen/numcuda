@@ -1,7 +1,7 @@
 #include "cudaArray.h"
 #include "cuda_runtime.h"
 #include "cudaArray.h"
-
+#include "numpy/arrayobject.h"
 
 size_t elem_size(Dtype type)
 {
@@ -99,7 +99,7 @@ static PyTypeObject PyCudaArray_Type = {
 	0,                       /* tp_dictoffset */
 	0,                       /* tp_init */
 	0,                       /* tp_alloc */
-	0,              			/* tp_new */
+	0,              		 /* tp_new */
 	0,             			 /* tp_free */
 };
 
@@ -127,10 +127,47 @@ new_cudaArray(PyObject *shape, char *buff,Dtype dtype)
 }
 
 
+//create cudaArray from numpy array
+static PyObject *
+_array(PyObject *self, PyObject *obj)
+{
+    PyCudaArray * res = PyObject_New(PyCudaArray,&PyCudaArray_Type);
+
+
+    size_t buff_size = get_data_size(shape,dtype);
+    res->buff_size = buff_size;
+    res->data_type = dtype;
+    Py_INCREF(shape);
+    res->shape = shape;
+    PyObject * strides = get_strides_from_shape(shape,dtype);
+    res->strides = strides;
+
+    cudaMalloc((void**)&res->data, buff_size);
+    if(buff != NULL){
+        //if buff!=NULL copy data to device
+        cudaMemcpy(&res->data,buff,buff_size,cudaMemcpyHostToDevice);
+    }
+    return (PyObject *)res;
+}
+
+
+
+
+
 static PyObject *
 asnumpy(PyObject *self,PyObject *cuda_array)
 {
-    return NULL;
+    PyCudaArray *array = (PyCudaArray *)cuda_array;
+    PyObject *PyArray;
+    if(array->data!=NULL){
+        char * buff = (char *)malloc(array->buff_size);
+        cudaMemcpy(buff,array->data,array->buff_size,cudaMemcpyDeviceToHost);
+        PyArray  = PyArray_SimpleNewFromData(2, Dims, NPY_DOUBLE, buff);
+    }else{
+        PyArray = Py_None;
+        Py_INCREF(Py_None);
+    }
+    return PyArray;
 }
 
 
@@ -140,8 +177,8 @@ asnumpy(PyObject *self,PyObject *cuda_array)
 
 /* Method table */
 static PyMethodDef Numcuda_Methods[] = {
-        //{"array", new_cudaArray, METH_VARARGS, "create a cudaArray!" },
-        {"asnumpy",asnumpy,METH_VARARGS,"convert cudaArray to numpy array"},
+        {"_array", _array, METH_VARARGS, "create cudaArray from numpy array!" },
+        {"asnumpy",asnumpy,METH_VARARGS,"convert cudaArray to numpy array!"},
         { NULL, NULL, 0, NULL }
 };
 
