@@ -12,4 +12,4 @@ use cuda as numpy
 
 5.cd ..
 
-6.source env.setup
+6.source env_setup.source
