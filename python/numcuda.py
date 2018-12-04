@@ -29,5 +29,5 @@ else:
 def array(obj):
     if isinstance(obj,list):
         obj = np.array(obj)
-    return _array(obj)
+    return arrays(obj)
 

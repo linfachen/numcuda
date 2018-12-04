@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.9)
 
 project (numcuda CXX)
 
@@ -19,6 +19,7 @@ set(CMAKE_CXX_FLAGS "-O2 -Wall -fPIC -std=c++14 ${CMAKE_CXX_FLAGS}")
 
 file(GLOB DIR_SRCS src/*.cpp)
 file(GLOB CU_SRCS src/kernel/*.cu)
+
 
 cuda_add_library(kernel STATIC  ${CU_SRCS})
 # message(${CUDA_INCLUDE_DIRS})

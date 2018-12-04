@@ -1,6 +1,7 @@
 cmake-build-debug/
 python/__pycache__
 build/
+.idea/
 
 # Prerequisites
 *.d

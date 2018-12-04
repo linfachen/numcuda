@@ -1,4 +1,4 @@
-shellpath=$(dirname $(readlink -f "$0"))
-echo ${shellpath}
-export PYTHONPATH=${shellpath}/python:${PYTHONPATH}
+project_path="$(cd "$(dirname ${BASH_SOURCE[0]})" && pwd)"
+echo ${project_path}
+export PYTHONPATH=${project_path}/python:${PYTHONPATH}
 
