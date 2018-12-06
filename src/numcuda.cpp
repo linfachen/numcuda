@@ -1,9 +1,14 @@
+#include <iostream>
 #include "cudaArray.h"
 #include "cuda_runtime.h"
 #include "cudaArray.h"
-#include <iostream>
+#include "kernel.h"
+
+#include "cuda_fp16.h"
 
 
+//args:shape buff dtype
+static PyObject *new_cudaArray(int64_t *shape,int ndim,char *buff,Dtype dtype,bool use_buff=false);
 
 
 template<typename DTYPE>
@@ -14,8 +19,6 @@ void _debug_data(void *data,int num=10)
         std::cout<<*((DTYPE*)data+i)<<std::endl;
     }
 }
-
-
 
 
 size_t elem_size(Dtype type)
@@ -44,6 +47,7 @@ size_t elem_size(Dtype type)
 	return res;
 }
 
+
 //get data size from shape
 size_t get_data_size(int64_t * shape,int ndim,Dtype type)
 {
@@ -53,6 +57,7 @@ size_t get_data_size(int64_t * shape,int ndim,Dtype type)
     }
     return res;
 }
+
 
 //get_strides_from_shape
 int64_t * get_strides_from_shape(int64_t * shape,int ndim,Dtype type)
@@ -64,6 +69,17 @@ int64_t * get_strides_from_shape(int64_t * shape,int ndim,Dtype type)
 	}
     return res;
 }
+
+
+bool is_same_shape(int64_t * a,int64_t * b,int a_dim,int b_dim)
+{
+    if(a_dim!=b_dim) return false;
+    for(int i=0;i<a_dim;i++){
+        if(*(a+i)!=*(b+i)) return false;
+    }
+    return true;
+}
+
 
 static PyObject *
 asnumpy(PyObject *self, PyObject *args)
@@ -83,6 +99,7 @@ asnumpy(PyObject *self, PyObject *args)
 }
 
 
+/* tp_dealloc */
 static void
 cudaArray_dealloc(PyCudaArray *self)
 {
@@ -100,18 +117,75 @@ cudaArray_dealloc(PyCudaArray *self)
 }
 
 
+/* tp_free */
 void cudaArray_free(void *ptr)
 {
     PyObject_Free(ptr);
 }
 
 
-
-
-static PyMethodDef myclass_method[] = {
+//class_method
+static PyMethodDef cudaArrayMethod[] = {
 		{ "asnumpy", (PyCFunction)asnumpy, METH_NOARGS, "convert cudaArray to numpy array!" },
 		{ 0 }
 };
+
+
+static PyObject * cudaArray_add(PyObject * a, PyObject *b)
+{
+    PyCudaArray *aa = (PyCudaArray *)a;
+    PyCudaArray *bb = (PyCudaArray *)b;
+
+    if((aa->data_type==bb->data_type)&&is_same_shape(aa->shape,bb->shape,aa->ndim,bb->ndim)){
+        char *buff = NULL;
+        cudaMalloc((void **)&buff,aa->buff_size);
+        elt_add_op(aa->data,bb->data,buff,aa->buff_size,aa->data_type);
+        PyObject *res = new_cudaArray(aa->shape,aa->ndim,buff,aa->data_type,true);
+        return res;
+    }else{
+        std::cerr<<"add only support for same shape"<<std::endl;
+        return NULL;
+    }
+}
+
+
+static PyNumberMethods cudaArray_as_number = {
+        (binaryfunc)cudaArray_add,     /*nb_add*/
+        0,//(binaryfunc)cudaArray_sub,     /*nb_subtract*/
+        0,//(binaryfunc)cudaArray_mul,     /*nb_multiply*/
+        0,                           /*nb_remainder*/
+        0,                           /*nb_divmod*/
+        0,                           /*nb_power*/
+        0,                           /*nb_negative*/
+        0,                           /*tp_positive*/
+        0,                           /*tp_absolute*/
+        0,                           /*tp_bool*/
+        0,                           /*nb_invert*/
+        0,                           /*nb_lshift*/
+        0,                           /*nb_rshift*/
+        0,                           /*nb_and*/
+        0,                           /*nb_xor*/
+        0,                           /*nb_or*/
+        0,                           /*nb_int*/
+        0,                           /*nb_reserved*/
+        0,                           /*nb_float*/
+        0,                           /* nb_inplace_add */
+        0,                           /* nb_inplace_subtract */
+        0,                           /* nb_inplace_multiply */
+        0,                           /* nb_inplace_remainder */
+        0,                           /* nb_inplace_power */
+        0,                           /* nb_inplace_lshift */
+        0,                           /* nb_inplace_rshift */
+        0,                           /* nb_inplace_and */
+        0,                           /* nb_inplace_xor */
+        0,                           /* nb_inplace_or */
+        0,                           /* nb_floor_divide */
+        0,                           /* nb_true_divide */
+        0,                           /* nb_inplace_floor_divide */
+        0,                           /* nb_inplace_true_divide */
+        0,                           /* nb_index */
+};
+
 
 
 static PyTypeObject PyCudaArray_Type = {
@@ -125,7 +199,7 @@ static PyTypeObject PyCudaArray_Type = {
 	0,                         /* tp_setattr */
 	0,                         /* tp_as_async */
 	0,                         /* tp_repr */
-	0,                        /* tp_as_number */
+    &cudaArray_as_number,       /* tp_as_number */
 	0,       					/* tp_as_sequence */
 	0,       					/* tp_as_mapping */
 	0,                         /* tp_hash  */
@@ -142,7 +216,7 @@ static PyTypeObject PyCudaArray_Type = {
 	0,                       /* tp_weaklistoffset */
 	0, 						/* tp_iter */
 	0,                       /* tp_iternext */
-	myclass_method,           /* tp_methods */
+	cudaArrayMethod,           /* tp_methods */
 	0,                        /* tp_members */
 	0,                       /* tp_getset */
 	0,                       /* tp_base */
@@ -158,7 +232,7 @@ static PyTypeObject PyCudaArray_Type = {
 
 //args:shape buff dtype
 static PyObject *
-new_cudaArray(int64_t *shape,int ndim,char *buff,Dtype dtype)
+new_cudaArray(int64_t *shape,int ndim,char *buff,Dtype dtype,bool use_buff)
 {
 	PyCudaArray * res = PyObject_New(PyCudaArray,&PyCudaArray_Type);
 
@@ -170,13 +244,16 @@ new_cudaArray(int64_t *shape,int ndim,char *buff,Dtype dtype)
 	res->shape = (int64_t *)malloc(ndim* sizeof(int64_t));
 	memcpy(res->shape,shape,ndim* sizeof(int64_t));
 	res->strides = get_strides_from_shape(shape,ndim,dtype);
-
-	cudaMalloc((void**)&res->data, buff_size);
-	if(buff != NULL){
-        //_debug_data<float>(buff,5);
-		//if buff!=NULL copy data to device
-		cudaMemcpy(res->data,buff,buff_size,cudaMemcpyHostToDevice);
-	}
+    if(use_buff){
+        res->data = buff;
+    }else {
+        cudaMalloc((void **) &res->data, buff_size);
+        if (buff != NULL) {
+            //_debug_data<float>(buff,5);
+            //if buff!=NULL copy data to device
+            cudaMemcpy(res->data, buff, buff_size, cudaMemcpyHostToDevice);
+        }
+    }
 	return (PyObject *)res;
 }
 
@@ -192,7 +269,6 @@ _array(PyObject *self, PyObject *obj)
 		PyObject *res = new_cudaArray(np_array->dimensions,np_array->nd,np_array->data,NUMPY_CHARTYPE_TO_NUMCUDA_TYPE[(NPY_TYPECHAR)(np_array->descr->type)]);
 		return res;
 	}else{
-		std::cout<<"chen lin fa1111"<<std::endl;
 		return NULL;
 	}
 }

@@ -8,6 +8,13 @@ find_package(PythonLibs 3 REQUIRED)
 # find CUDA
 find_package(CUDA)
 
+set(USE_GDB ON)
+
+if(USE_GDB)
+    SET(CMAKE_BUILD_TYPE "Debug")
+    SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")
+endif()
+
 # include directories
 include_directories("include")
 include_directories(${PYTHON_INCLUDE_DIRS})
