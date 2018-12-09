@@ -23,7 +23,7 @@ enum class Dtype
     float64,
 };
 
-
+size_t elem_size(Dtype type);
 
 extern std::unordered_map<Dtype,NPY_TYPES>   TO_NUMPY_TYPE;
 extern std::unordered_map<Dtype,NPY_TYPECHAR>   TO_NUMPY_CHARTYPE;

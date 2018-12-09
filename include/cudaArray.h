@@ -18,7 +18,7 @@ typedef struct {
     char * data;
 }PyCudaArray;
 
-size_t elem_size(Dtype type);
+
 PyObject * get_strides_from_shape(PyObject *);
 
 #endif //NUMCUDA_CUDAARRAY_H
