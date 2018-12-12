@@ -21,4 +21,5 @@ typedef struct {
 
 PyObject * get_strides_from_shape(PyObject *);
 
+std::pair<bool,int64_t *> can_broadcast(int64_t * shape_a,int64_t * shape_b,int dim_a,int dim_b);
 #endif //NUMCUDA_CUDAARRAY_H

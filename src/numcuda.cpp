@@ -31,7 +31,6 @@ void _debug_data(__half *data,int num)
 }
 
 
-
 size_t elem_size(Dtype type)
 {
 	size_t res = 0;
@@ -82,6 +81,7 @@ int64_t * get_strides_from_shape(int64_t * shape,int ndim,Dtype type)
 }
 
 
+//verfity if two array are same shape
 bool is_same_shape(int64_t * a,int64_t * b,int a_dim,int b_dim)
 {
     if(a_dim!=b_dim) return false;
@@ -90,6 +90,33 @@ bool is_same_shape(int64_t * a,int64_t * b,int a_dim,int b_dim)
     }
     return true;
 }
+
+
+//verfity if can broadcast
+std::pair<bool,int64_t *> can_broadcast(int64_t * shape_a,int64_t * shape_b,int dim_a,int dim_b)
+{
+    int dim = (dim_a>dim_b) ? dim_a:dim_b;
+    int64_t * shape_c = (int64_t *)malloc(dim* sizeof(int64_t));
+    for(int i=0;i<dim;i++){
+        if(i<dim_a && i<dim_b){
+            int a = *(shape_a+dim_a-i-1);
+            int b = *(shape_b+dim_b-i-1);
+            if(a!=1 && b!=1){
+                free(shape_c);
+                return std::make_pair(false, nullptr);
+            }
+            *(shape_c+dim-i-1) = std::max(a,b);
+            continue;
+        }
+        if(i>=dim_a){
+            *(shape_c+dim-i-1) = *(shape_b+dim_b-i-1);
+        }else{
+            *(shape_c+dim-i-1) = *(shape_a+dim_a-i-1);
+        }
+    }
+    return std::make_pair(true, shape_c);
+}
+
 
 
 static PyObject *
@@ -150,15 +177,22 @@ static PyObject * cudaArray_add(PyObject * a, PyObject *b)
     PyCudaArray *aa = (PyCudaArray *)a;
     PyCudaArray *bb = (PyCudaArray *)b;
 
-    if((aa->data_type==bb->data_type)&&is_same_shape(aa->shape,bb->shape,aa->ndim,bb->ndim)){
+    if(aa->data_type!=bb->data_type){
+        std::cerr<<"add only support for same shape"<<std::endl;
+        return NULL;
+    }
+
+    if(is_same_shape(aa->shape,bb->shape,aa->ndim,bb->ndim)){
         char *buff = NULL;
         cudaMalloc((void **)&buff,aa->buff_size);
         elt_add_op(aa->data,bb->data,buff,aa->buff_size,aa->data_type);
         PyObject *res = new_cudaArray(aa->shape,aa->ndim,buff,aa->data_type,true);
         return res;
-    }else{
-        std::cerr<<"add only support for same shape"<<std::endl;
-        return NULL;
+    }
+
+    auto can = can_broadcast(aa->shape,bb->shape,aa->ndim,bb->ndim);
+    if(can.first){
+
     }
 }
 
@@ -168,15 +202,22 @@ static PyObject * cudaArray_sub(PyObject * a, PyObject *b)
     PyCudaArray *aa = (PyCudaArray *)a;
     PyCudaArray *bb = (PyCudaArray *)b;
 
-    if((aa->data_type==bb->data_type)&&is_same_shape(aa->shape,bb->shape,aa->ndim,bb->ndim)){
+    if(aa->data_type!=bb->data_type){
+        std::cerr<<"add only support for same shape"<<std::endl;
+        return NULL;
+    }
+
+    if(is_same_shape(aa->shape,bb->shape,aa->ndim,bb->ndim)){
         char *buff = NULL;
         cudaMalloc((void **)&buff,aa->buff_size);
         elt_sub_op(aa->data,bb->data,buff,aa->buff_size,aa->data_type);
         PyObject *res = new_cudaArray(aa->shape,aa->ndim,buff,aa->data_type,true);
         return res;
-    }else{
-        std::cerr<<"add only support for same shape"<<std::endl;
-        return NULL;
+    }
+
+    auto can = can_broadcast(aa->shape,bb->shape,aa->ndim,bb->ndim);
+    if(can.first){
+
     }
 }
 
@@ -186,15 +227,22 @@ static PyObject * cudaArray_mul(PyObject * a, PyObject *b)
     PyCudaArray *aa = (PyCudaArray *)a;
     PyCudaArray *bb = (PyCudaArray *)b;
 
-    if((aa->data_type==bb->data_type)&&is_same_shape(aa->shape,bb->shape,aa->ndim,bb->ndim)){
+    if(aa->data_type!=bb->data_type){
+        std::cerr<<"add only support for same data type"<<std::endl;
+        return NULL;
+    }
+
+    if(is_same_shape(aa->shape,bb->shape,aa->ndim,bb->ndim)){
         char *buff = NULL;
         cudaMalloc((void **)&buff,aa->buff_size);
         elt_mul_op(aa->data,bb->data,buff,aa->buff_size,aa->data_type);
         PyObject *res = new_cudaArray(aa->shape,aa->ndim,buff,aa->data_type,true);
         return res;
-    }else{
-        std::cerr<<"add only support for same shape"<<std::endl;
-        return NULL;
+    }
+
+    auto can = can_broadcast(aa->shape,bb->shape,aa->ndim,bb->ndim);
+    if(can.first){
+
     }
 }
 
@@ -204,15 +252,23 @@ static PyObject * cudaArray_div(PyObject * a, PyObject *b)
     PyCudaArray *aa = (PyCudaArray *)a;
     PyCudaArray *bb = (PyCudaArray *)b;
 
-    if((aa->data_type==bb->data_type)&&is_same_shape(aa->shape,bb->shape,aa->ndim,bb->ndim)){
+
+    if(aa->data_type!=bb->data_type){
+        std::cerr<<"add only support for same data type"<<std::endl;
+        return NULL;
+    }
+
+    if(is_same_shape(aa->shape,bb->shape,aa->ndim,bb->ndim)){
         char *buff = NULL;
         cudaMalloc((void **)&buff,aa->buff_size);
         elt_div_op(aa->data,bb->data,buff,aa->buff_size,aa->data_type);
         PyObject *res = new_cudaArray(aa->shape,aa->ndim,buff,aa->data_type,true);
         return res;
-    }else{
-        std::cerr<<"add only support for same shape"<<std::endl;
-        return NULL;
+    }
+
+    auto can = can_broadcast(aa->shape,bb->shape,aa->ndim,bb->ndim);
+    if(can.first){
+
     }
 }
 
